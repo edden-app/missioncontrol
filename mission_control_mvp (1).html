@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Control News</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transform: translateY(0);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .news-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid #667eea;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .news-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .news-summary {
+            font-size: 1em;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .topic-tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c66;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Mission Control</h1>
+            <p class="subtitle">Your AI-powered news command center for what truly matters</p>
+        </header>
+
+        <div class="controls">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="topic">Topic Focus</label>
+                    <select id="topic">
+                        <option value="all">All Topics</option>
+                        <option value="technology">Technology</option>
+                        <option value="politics">Politics</option>
+                        <option value="business">Business</option>
+                        <option value="science">Science</option>
+                        <option value="health">Health</option>
+                        <option value="climate">Climate & Environment</option>
+                        <option value="international">International</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="timeRange">Time Range</label>
+                    <select id="timeRange">
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="day">Today</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button onclick="fetchNews()" id="fetchBtn">Generate News Summary</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing global news and generating intelligent summaries...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="newsContainer" class="news-grid"></div>
+
+        <div id="emptyState" class="empty-state">
+            <h3>🌍 Ready to Launch</h3>
+            <p>Select your preferences above and click "Generate News Summary" to get started with your personalized intelligence briefing.</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const NEWS_API_KEY = '840a253668a24ff08e4e200fb1ebf475';
+        const NEWS_API_BASE_URL = 'https://newsapi.org/v2';
+        const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE'; // Replace with your OpenAI API key
+        const OPENAI_API_BASE_URL = 'https://api.openai.com/v1';
+
+        // Topic mapping for News API categories
+        const topicMapping = {
+            'all': 'general',
+            'technology': 'technology',
+            'politics': 'general',
+            'business': 'business',
+            'science': 'science',
+            'health': 'health',
+            'climate': 'science',
+            'international': 'general'
+        };
+
+        // Search terms for specific topics
+        const searchTerms = {
+            'politics': 'politics OR government OR election OR policy',
+            'climate': 'climate change OR global warming OR environment OR sustainability',
+            'international': 'international OR global OR world OR foreign'
+        };
+
+        async function fetchNewsFromAPI(topic, timeRange) {
+            const category = topicMapping[topic] || 'general';
+            const searchTerm = searchTerms[topic];
+            
+            // Calculate date range
+            const toDate = new Date();
+            const fromDate = new Date();
+            
+            switch(timeRange) {
+                case 'day':
+                    fromDate.setDate(fromDate.getDate() - 1);
+                    break;
+                case 'week':
+                    fromDate.setDate(fromDate.getDate() - 7);
+                    break;
+                case 'month':
+                    fromDate.setDate(fromDate.getDate() - 30);
+                    break;
+            }
+
+            const fromDateStr = fromDate.toISOString().split('T')[0];
+            const toDateStr = toDate.toISOString().split('T')[0];
+
+            let url;
+            if (searchTerm) {
+                // Use everything endpoint for specific searches
+                url = `${NEWS_API_BASE_URL}/everything?q=${encodeURIComponent(searchTerm)}&from=${fromDateStr}&to=${toDateStr}&sortBy=relevancy&pageSize=20&apiKey=${NEWS_API_KEY}`;
+            } else {
+                // Use top-headlines for categories
+                if (topic === 'all') {
+                    url = `${NEWS_API_BASE_URL}/top-headlines?country=us&pageSize=20&apiKey=${NEWS_API_KEY}`;
+                } else {
+                    url = `${NEWS_API_BASE_URL}/top-headlines?category=${category}&pageSize=20&apiKey=${NEWS_API_KEY}`;
+                }
+            }
+
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Invalid API key. Please check your News API key.');
+                } else if (response.status === 429) {
+                    throw new Error('API rate limit exceeded. Please try again later.');
+                } else {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+            }
+
+            const data = await response.json();
+            
+            if (data.status === 'error') {
+                throw new Error(data.message || 'News API error');
+            }
+
+            return data.articles || [];
+        }
+
+        function processNewsArticles(articles, topic, aiSummaries = null) {
+            const filteredArticles = articles
+                .filter(article => 
+                    article.title && 
+                    article.description && 
+                    article.title !== '[Removed]' &&
+                    article.description !== '[Removed]'
+                )
+                .slice(0, 8);
+
+            return filteredArticles.map((article, index) => {
+                const aiSummary = aiSummaries && aiSummaries[index];
+                
+                return {
+                    title: article.title,
+                    summary: aiSummary ? aiSummary.summary : article.description,
+                    topic: capitalizeFirst(topic === 'all' ? 'General' : topic),
+                    timestamp: article.publishedAt.split('T')[0],
+                    source: article.source.name,
+                    url: article.url,
+                    importance: aiSummary ? aiSummary.importance : calculateImportanceFallback(article),
+                    keyTakeaway: aiSummary ? aiSummary.keyTakeaway : null,
+                    isAISummary: !!aiSummary
+                };
+            });
+        }
+
+        function calculateImportanceFallback(article) {
+            // Fallback importance scoring when AI is not available
+            const title = article.title.toLowerCase();
+            const description = article.description.toLowerCase();
+            
+            const highImportanceKeywords = ['breaking', 'urgent', 'crisis', 'emergency', 'major', 'historic', 'breakthrough'];
+            const criticalKeywords = ['war', 'pandemic', 'disaster', 'death', 'killed'];
+            
+            if (criticalKeywords.some(keyword => title.includes(keyword) || description.includes(keyword))) {
+                return 'critical';
+            }
+            
+            if (highImportanceKeywords.some(keyword => title.includes(keyword) || description.includes(keyword))) {
+                return 'high';
+            }
+            
+            // Check source credibility (simplified)
+            const majorSources = ['Reuters', 'Associated Press', 'BBC', 'CNN', 'The New York Times', 'The Guardian'];
+            if (majorSources.includes(article.source.name)) {
+                return 'high';
+            }
+            
+            return 'normal';
+        }
+
+        async function generateAISummary(articles, topic) {
+            if (OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
+                throw new Error('OpenAI API key not configured');
+            }
+
+            // Prepare articles for AI processing
+            const articlesText = articles.slice(0, 8).map((article, index) => 
+                `Article ${index + 1}:\nTitle: ${article.title}\nDescription: ${article.description}\nSource: ${article.source.name}\nPublished: ${article.publishedAt}\n`
+            ).join('\n---\n\n');
+
+            const prompt = `You are an expert news analyst. Analyze these ${topic === 'all' ? 'general' : topic} news articles and create intelligent summaries.
+
+For each article, create a concise but comprehensive summary that:
+1. Captures the key facts and significance
+2. Explains why this matters to readers
+3. Provides context and implications
+4. Is 2-3 sentences long
+5. Uses clear, engaging language
+
+Articles to analyze:
+${articlesText}
+
+Respond with a JSON array of objects, each containing:
+- "title": The original article title
+- "summary": Your intelligent 2-3 sentence summary
+- "importance": "critical", "high", or "normal" based on global significance
+- "keyTakeaway": One-sentence key insight
+
+Focus on substance over sensationalism. Prioritize stories with real-world impact.`;
+
+            try {
+                const response = await fetch(`${OPENAI_API_BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: 'You are an expert news analyst who creates intelligent, contextual summaries. Always respond with valid JSON.'
+                            },
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Invalid OpenAI API key');
+                    } else if (response.status === 429) {
+                        throw new Error('OpenAI API rate limit exceeded');
+                    } else {
+                        throw new Error(`OpenAI API error: ${response.status}`);
+                    }
+                }
+
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+                
+                // Parse AI response
+                try {
+                    return JSON.parse(aiResponse);
+                } catch (parseError) {
+                    console.error('Failed to parse AI response:', aiResponse);
+                    throw new Error('Failed to parse AI summary response');
+                }
+
+            } catch (error) {
+                console.error('OpenAI API error:', error);
+                throw error;
+            }
+        }
+
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function getImportanceColor(importance) {
+            switch(importance) {
+                case 'critical': return '#e74c3c';
+                case 'high': return '#f39c12';
+                default: return '#667eea';
+            }
+        }
+
+        async function fetchNews() {
+            const topic = document.getElementById('topic').value;
+            const timeRange = document.getElementById('timeRange').value;
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const newsContainer = document.getElementById('newsContainer');
+            const emptyState = document.getElementById('emptyState');
+            const fetchBtn = document.getElementById('fetchBtn');
+
+            // Show loading state
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            newsContainer.innerHTML = '';
+            emptyState.style.display = 'none';
+            fetchBtn.disabled = true;
+
+            // Update loading message for AI processing
+            const loadingText = document.querySelector('#loading p');
+            loadingText.textContent = 'Fetching latest news articles...';
+
+            try {
+                // Fetch real news from News API
+                const articles = await fetchNewsFromAPI(topic, timeRange);
+                
+                if (articles.length === 0) {
+                    loadingEl.style.display = 'none';
+                    fetchBtn.disabled = false;
+                    emptyState.innerHTML = '<h3>📰 No News Found</h3><p>Try selecting a different topic or time range.</p>';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                let aiSummaries = null;
+                let newsArticles;
+
+                // Try to generate AI summaries
+                if (OPENAI_API_KEY !== 'YOUR_OPENAI_API_KEY_HERE') {
+                    try {
+                        loadingText.textContent = 'Generating intelligent AI summaries...';
+                        aiSummaries = await generateAISummary(articles, topic);
+                        console.log('AI summaries generated successfully');
+                    } catch (aiError) {
+                        console.warn('AI summarization failed, using original descriptions:', aiError.message);
+                        // Continue with original descriptions
+                    }
+                }
+
+                // Process articles (with or without AI summaries)
+                newsArticles = processNewsArticles(articles, topic, aiSummaries);
+
+                // Hide loading
+                loadingEl.style.display = 'none';
+                fetchBtn.disabled = false;
+
+                // Render news cards with enhanced data
+                newsContainer.innerHTML = newsArticles.map(article => `
+                    <div class="news-card" style="border-left-color: ${getImportanceColor(article.importance)}">
+                        <div class="news-title">${escapeHtml(article.title)}</div>
+                        ${article.isAISummary ? '<div style="font-size: 0.8em; color: #667eea; margin-bottom: 10px; font-weight: 600;">🤖 AI Summary</div>' : ''}
+                        <div class="news-summary">${escapeHtml(article.summary)}</div>
+                        ${article.keyTakeaway ? `<div style="margin-top: 12px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-style: italic; font-size: 0.9em;"><strong>Key Insight:</strong> ${escapeHtml(article.keyTakeaway)}</div>` : ''}
+                        <div class="news-meta">
+                            <span class="topic-tag">${article.topic}</span>
+                            <div>
+                                <span style="font-weight: 600;">${escapeHtml(article.source)}</span>
+                                <span style="margin-left: 10px;">${formatDate(article.timestamp)}</span>
+                            </div>
+                        </div>
+                        ${article.url ? `<a href="${article.url}" target="_blank" style="display: inline-block; margin-top: 10px; color: #667eea; text-decoration: none; font-size: 0.9em;">Read Full Article →</a>` : ''}
+                    </div>
+                `).join('');
+
+                // Show success message if AI was used
+                if (aiSummaries && aiSummaries.length > 0) {
+                    const successMsg = document.createElement('div');
+                    successMsg.style.cssText = 'background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9em;';
+                    successMsg.innerHTML = '✨ <strong>AI-Enhanced Summaries:</strong> Articles have been intelligently analyzed and summarized for better understanding.';
+                    newsContainer.insertBefore(successMsg, newsContainer.firstChild);
+                }
+
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                fetchBtn.disabled = false;
+                errorEl.textContent = error.message || 'Failed to fetch news. Please try again.';
+                errorEl.style.display = 'block';
+                console.error('News fetch error:', error);
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Auto-load news on page load
+        window.addEventListener('load', () => {
+            // Show updated instruction message
+            const emptyState = document.getElementById('emptyState');
+            emptyState.innerHTML = `
+                <h3>🚀 Mission Control Ready!</h3>
+                <p>Your News API is connected. Add your OpenAI API key for intelligent AI summaries, then select your preferences above.</p>
+                <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; font-size: 0.9em;">
+                    <strong>Setup Status:</strong><br>
+                    ✅ News API: Connected<br>
+                    ${OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE' ? 
+                        '⚠️ OpenAI API: Add your key for AI summaries<br>Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #fff; text-decoration: underline;">OpenAI Platform</a>' : 
+                        '✅ OpenAI API: Connected'
+                    }<br><br>
+                    <strong>Ready to launch:</strong> Click "Generate News Summary" above!
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>
